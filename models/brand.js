@@ -1,14 +1,17 @@
-const { type, contentType } = require('express/lib/response');
 const Mongoose = require('mongoose');
 const slug = require('mongoose-slug-generator');
-const merchant = require('./merchant');
+const { Schema } = Mongoose;
+
 const options = {
     separator: '-',
     lang: 'en',
     truncate: 120
 };
 
-const BrandSchema = new Mongoose.Schema({
+Mongoose.plugin(slug, options);
+
+// Brand Schema
+const BrandSchema = new Schema({
     name: {
         type: String,
         trim: true
@@ -25,14 +28,12 @@ const BrandSchema = new Mongoose.Schema({
     description: {
         type: String,
         trim: true
-
     },
     isActive: {
         type: Boolean,
         default: true
     },
     merchant: {
-
         type: Schema.Types.ObjectId,
         ref: 'Merchant',
         default: null
@@ -42,7 +43,6 @@ const BrandSchema = new Mongoose.Schema({
         type: Date,
         default: Date.now
     }
+});
 
-}
-
-)
+module.exports = Mongoose.model('Brand', BrandSchema);

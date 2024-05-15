@@ -5,6 +5,7 @@ const crypto = require('crypto')
 
 const { ROLES, MERCHANT_STATUS } = require('../../constants');
 const Merchant = require("../../models/merchant");
+const Brand = require('../../models/brand');
 const auth = require("../../middleware/auth")
 const role = require("../../middleware/role")
 
@@ -43,4 +44,41 @@ merchantRouter.post('/add', async (req, res) => {
         });
     }
 });
-module.exports=merchantRouter;
+
+// search merchants api
+merchantRouter.get('/search', auth, role.check(ROLES.Admin), async (req, res) => {
+    try {
+        const { search } = req.query;
+        const regex = new RegExp(search, 'i');
+        const merchants = await Merchant.find({
+            $or: [
+                { phoneNumber: { $regex: regex } },
+                { email: { $regex: regex } },
+                { name: { $regex: regex } },
+                { brandName: { $regex: regex } },
+                { status: { $regex: regex } }
+            ]
+        }).populate('brand', 'name');
+        res.status(200).json({ merchants })
+    } catch (error) {
+        res.status(400).json({
+            error: "Your request not be proceed. Please try again."
+        })
+
+    }
+});
+// fetch all merchants api
+merchantRouter.get('/', async (req, res) => {
+    try {
+        const { page = 1, limit = 10 } = req.query;
+        const merchants = await Merchant.find()
+            .populate('brand')
+            .sort('created')
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .exec()
+    } catch (error) {
+
+    }
+})
+module.exports = merchantRouter;

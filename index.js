@@ -10,7 +10,7 @@ const routes = require('./routes');
 const { port } = keys;
 const app = express();
 setupDB();
-
+require('./config/passport')(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(helmet({
