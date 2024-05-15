@@ -7,7 +7,8 @@ const { ROLES, MERCHANT_STATUS } = require('../../constants');
 const Merchant = require("../../models/merchant");
 const Brand = require('../../models/brand');
 const auth = require("../../middleware/auth")
-const role = require("../../middleware/role")
+const role = require("../../middleware/role");
+const { status } = require('express/lib/response');
 
 merchantRouter.post('/add', async (req, res) => {
     try {
@@ -68,7 +69,7 @@ merchantRouter.get('/search', auth, role.check(ROLES.Admin), async (req, res) =>
     }
 });
 // fetch all merchants api
-merchantRouter.get('/', async (req, res) => {
+merchantRouter.get('/', auth, role.check(ROLES.Admin), async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
         const merchants = await Merchant.find()
@@ -77,8 +78,57 @@ merchantRouter.get('/', async (req, res) => {
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .exec()
+        const count = await Merchant.countDocuments();
+        res.status(200).json({
+            merchants,
+            totalPages: Math.ceil(count / limit),
+            currentPage: Number(page),
+            count
+
+        })
     } catch (error) {
+        res.status(400).json({
+            error: 'Your request could not be processed. Please try again.'
+        });
 
     }
+});
+// disable merchant account
+merchantRouter.put('/:id/active', auth, async (req, res) => {
+    try {
+        const merchantId = req.params.id;
+        const update = req.body.merchant;
+        const query = { _id: merchantId };
+        const merchantDoc = await Merchant.findByIdAndUpdate(merchantId, update, {
+            new: true
+        })
+
+        if (!update.isActive) {
+            await deactiveBrand(merchantId);
+
+        }
+        res.status(200).json({
+            success: true
+        })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({ error: 'Your request could not be processed. Please try again.' })
+    }
 })
+
+const deactiveBrand = async merchantId => {
+    const merchantDoc = await Merchant.findOne({ _id: merchantId })
+        .populate('brand', '_id');
+    if (!merchantDoc || !merchantDoc.brand) return
+    const brandId = merchantDoc.brand._id;
+    const query = { _id: brandId }
+    const update = {
+        isActive: false
+    };
+    return await Brand.findOneAndDelete(query, update, {
+        new: true
+    })
+
+}
 module.exports = merchantRouter;
