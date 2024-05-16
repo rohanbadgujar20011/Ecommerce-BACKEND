@@ -137,6 +137,7 @@ merchantRouter.put('/approve/:id', auth, async (req, res) => {
     }
 
 })
+//approve merchant
 merchantRouter.put('/approve/:id', auth, async (req, res) => {
     try {
       const merchantId = req.params.id;
@@ -180,5 +181,11 @@ const deactiveBrand = async merchantId => {
         new: true
     })
 
+}
+
+const createMerchantUser=async(email,name,_id,host)=>{
+    const firstName=name;
+    const lastName='';
+    c
 }
 module.exports = merchantRouter;
