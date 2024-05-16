@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto')
 const authrouter = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken")
@@ -6,7 +7,7 @@ const auth = require("../../middleware/auth")
 const User = require("../../models/user")
 const keys = require('../../config/keys')
 const { EMAIL_PROVIDER } = require("../../constants")
-
+const { sendEmail } = require('../../services/mail')
 
 const { secret, tokenLife } = keys.jwt;
 authrouter.post('/login', async (req, res) => {
@@ -104,24 +105,49 @@ authrouter.post('/register', async (req, res) => {
 
     }
 })
-authrouter.post('/forget', async (req, res) => {
+authrouter.post('/forgot', async (req, res) => {
     try {
         const { email } = req.body;
+
         if (!email) {
-            return res.status(400).json({ error: "You must enter a email address" })
-
+            return res
+                .status(400)
+                .json({ error: 'You must enter an email address.' });
         }
-        const existingUser = await User.findOne({ email })
+
+        const existingUser = await User.findOne({ email });
+
         if (!existingUser) {
-            return res.status(400).send({ error: "No User Found with this email address" })
+            return res
+                .status(400)
+                .send({ error: 'No user found for this email address.' });
         }
 
+        const buffer = crypto.randomBytes(48);
+        const resetToken = buffer.toString('hex');
+
+
+        existingUser.resetPasswordToken = resetToken;
+        existingUser.resetPasswordExpires = Date.now() + 3600000;
+
+        existingUser.save();
+
+        await sendEmail(
+            existingUser.email,
+            'reset',
+            req.headers.host,
+            resetToken
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Please check your email for the link to reset your password.'
+        });
     } catch (error) {
-        return res.status(400).json({
-            error: error
-
-        })
-
+        console.log(error);
+        res.status(400).json({
+            error: 'Your request could not be processed. Please try again.'
+        });
     }
-})
+});
 module.exports = authrouter;

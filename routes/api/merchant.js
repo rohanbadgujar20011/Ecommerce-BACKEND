@@ -9,6 +9,7 @@ const Brand = require('../../models/brand');
 const auth = require("../../middleware/auth")
 const role = require("../../middleware/role");
 const { status } = require('express/lib/response');
+const { sendEmail } = require('../../services/mail')
 
 merchantRouter.post('/add', async (req, res) => {
     try {
@@ -105,6 +106,7 @@ merchantRouter.put('/:id/active', auth, async (req, res) => {
 
         if (!update.isActive) {
             await deactiveBrand(merchantId);
+            await sendEmail(merchantDoc.email, 'merchant-deactivate-account');
 
         }
         res.status(200).json({
@@ -116,7 +118,55 @@ merchantRouter.put('/:id/active', auth, async (req, res) => {
         return res.status(400).json({ error: 'Your request could not be processed. Please try again.' })
     }
 })
+//approve merchant
+merchantRouter.put('/approve/:id', auth, async (req, res) => {
+    try {
+        const merchantId = req.params.id;
+        const query = { _id: merchantId }
+        const update = {
+            status: MERCHANT_STATUS.Approved,
+            isActive: true
+        }
+        const merchantDoc = await Merchant.findOneAndUpdate(query, update, {
+            new: true
+        });
 
+
+    } catch (error) {
+
+    }
+
+})
+merchantRouter.put('/approve/:id', auth, async (req, res) => {
+    try {
+      const merchantId = req.params.id;
+      const query = { _id: merchantId };
+      const update = {
+        status: MERCHANT_STATUS.Approved,
+        isActive: true
+      };
+  
+      const merchantDoc = await Merchant.findOneAndUpdate(query, update, {
+        new: true
+      });
+  
+      await createMerchantUser(
+        merchantDoc.email,
+        merchantDoc.name,
+        merchantId,
+        req.headers.host
+      );
+  
+      res.status(200).json({
+        success: true
+      });
+    } catch (error) {
+      res.status(400).json({
+        error: 'Your request could not be processed. Please try again.'
+      });
+    }
+  });
+  
 const deactiveBrand = async merchantId => {
     const merchantDoc = await Merchant.findOne({ _id: merchantId })
         .populate('brand', '_id');
