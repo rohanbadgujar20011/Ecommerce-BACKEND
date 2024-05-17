@@ -128,10 +128,9 @@ authrouter.post('/forgot', async (req, res) => {
 
 
         existingUser.resetPasswordToken = resetToken;
-        existingUser.resetPasswordExpires = Date.now() + 3600000;
+        existingUser.resetPasswordExpires = Date.now();
 
         existingUser.save();
-
         await sendEmail(
             existingUser.email,
             'reset',
@@ -150,4 +149,50 @@ authrouter.post('/forgot', async (req, res) => {
         });
     }
 });
+//reset verify
+authrouter.post('/reset/:token', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ error: 'You must enter a password.' });
+        }
+       
+
+        const resetUser = await User.findOne({
+            resetPasswordToken: req.params.token,
+
+        });
+
+        if (!resetUser) {
+            return res.status(400).json({
+                error:
+                    'Your token has expired. Please attempt to reset your password again.'
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        resetUser.password = hash;
+        resetUser.resetPasswordToken = undefined;
+        resetUser.resetPasswordExpires = undefined;
+
+        resetUser.save();
+
+        sendEmail(resetUser.email, 'reset-confirmation');
+
+        res.status(200).json({
+            success: true,
+            message:
+                'Password changed successfully. Please login with your new password.'
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({
+            error: 'Your request could not be processed. Please try again.'
+        });
+    }
+});
+
 module.exports = authrouter;

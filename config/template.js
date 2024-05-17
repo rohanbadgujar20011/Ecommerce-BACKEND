@@ -1,7 +1,7 @@
 const { text } = require("body-parser");
-
+const { app } = require('../config/keys')
 exports.resetEmail = (host, resetToken) => {
-    const resetLink = `http://${host}/reset-password/${resetToken}`;
+    const resetLink = `http://${host}/${app.apiURL}/auth/reset/${resetToken}`;
     const message = {
         subject: 'Reset Password',
         text: `<b>You are receiving this because you have requested to reset your password for your account. </b><br> <b> Please <a href= ${resetLink} > Click here </a>to complete the process </b><br> <br><b> If you did not request this, please ignore this email and your password will remain unchanged.</b> `

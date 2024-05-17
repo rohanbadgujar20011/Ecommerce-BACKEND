@@ -34,22 +34,22 @@ const UserSchema = new Mongoose.Schema({
     },
     facebookId: {
         type: String
-    }, 
+    },
     avatar: {
-        type :String
+        type: String
 
     },
-    role : {
-        type : String,
-        default : ROLES.Member,
+    role: {
+        type: String,
+        default: ROLES.Member,
         enum: [ROLES.Admin, ROLES.Member, ROLES.Merchant]
     },
-    resetPasswordToken : {type:String},
-    resetPasswordExpire:{type:Date},
-    updated:Date,
-    created:{
-        type:Date,
-        default:Date.now
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    updated: Date,
+    created: {
+        type: Date,
+        default: Date.now
     }
 })
-module.exports=Mongoose.model('User',UserSchema);
+module.exports = Mongoose.model('User', UserSchema);

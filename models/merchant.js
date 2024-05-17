@@ -7,7 +7,6 @@ const MerchantSchema=new Mongoose.Schema({
     },
     email:{
         type:String
-
     },
     phoneNumber:{
         type : String

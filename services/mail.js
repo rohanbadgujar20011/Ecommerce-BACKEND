@@ -15,7 +15,6 @@ exports.sendEmail = async (email, type, host, data) => {
     try {
         const message = prepareTemplate(type, host, data);
 
-
         const config = {
             from: `MERN Store! ${mail.email} `,
             to: email,
